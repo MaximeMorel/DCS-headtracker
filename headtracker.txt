@@ -1,0 +1,57 @@
+Interface for head tracker devices.
+
+Support of head tracker devices implemented like a plugin system. 
+Simulator tries to load .dll using path written in file scripts/input/input.lua.
+By default it is "bin/headtracker/headtracker.dll":
+
+-- path to headtracker plugin dll
+setHeadTrackerDllPath('./bin/headtracker/headtracker.dll')
+
+Plugin dll implements set of functions described in HeadtrackerDll.h.
+Some functions can be omitted.
+Functions list:
+
+
+HEADTRACKERDLL_API int initHeadTracker(HWND hwnd);
+
+Initialization of device. Returns 0 if initialization was unsuccessful.
+hwnd - handler of main application window. This function cannot be omitted.
+
+
+HEADTRACKERDLL_API void shutDownHeadTracker();
+
+Optional deinitialization of device. Called before unload headtracker .dll.
+
+
+HEADTRACKERDLL_API void requestHeadTrackerData(struct HeadTrackerData* data);
+
+Client informs device which data he would like to receive. 
+If device cannot transmit data from some axis it informs client about it. Cannot be omitted.
+
+
+HEADTRACKERDLL_API int getHeadTrackerData(struct HeadTrackerData* data);
+
+Client recievs data from device. Only axes verified in requestHeadTrackerData() will be send to simulator.  Returns non-zero on success. This function is mandatory.
+
+
+For convinience every function typedefed in HeadtrackerDll.h.
+
+Structure HeadTrackerData is:
+
+struct HeadTrackerData
+{
+  // version of HeadTrackerData (for future releases)
+  double version;
+
+  // axes values
+  // values must be in range [-1; 1]
+  double pitch;
+  double yaw;
+  double roll;
+  double x;
+  double y;
+  double z;
+};
+
+Value of every axis must be in range [-1; 1]. Field "version" filled by client and necessary for future compatibility.
+Current version is 1.0.

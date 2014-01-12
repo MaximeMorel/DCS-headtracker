@@ -2,9 +2,13 @@ DCS-headtracker
 ===============
 
 Implementation of DCS (Digital Combat Simulator) headtracker interface. To use with FreeTrack.
+
 Headtracker dll interface for freetrack / opentrack and DCS World.
+
 Using sources by samtheeagle in this post : http://forums.eagle.ru/showpost.php?p=1888102&postcount=147
+
 Using the interface given here : http://forums.eagle.ru/showpost.php?p=1212342&postcount=91
+
 Modifications by popux.
 
 I made this plugin modification because I was annoyed by the crash when exiting the simulation. I also add some logging features to debug. And the ability to clamp the values of an axis in one direction or another.

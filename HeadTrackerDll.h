@@ -11,17 +11,17 @@
 ////////////////////////////////////////////////////////////////////////////////
 typedef struct
 {
-  // version of HeadTrackerData (for future releases)
-  double version;
+    // version of HeadTrackerData (for future releases)
+    double version;
 
-  // axes values
-  // values must be in range [-1; 1]
-  double pitch;
-  double yaw;
-  double roll;
-  double x;
-  double y;
-  double z;
+    // axes values
+    // values must be in range [-1; 1]
+    double pitch;
+    double yaw;
+    double roll;
+    double x;
+    double y;
+    double z;
 } HeadTrackerData;
 ////////////////////////////////////////////////////////////////////////////////
 typedef int (*InitHeadTrackerProc)(HWND);

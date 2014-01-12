@@ -32,7 +32,7 @@ typedef struct
     double clampMin, clampMax;  // min and max clamp [-1, 1]
     double maxFreeTrackValue;   // max freetrack output value
 } AxisInfo;
-
+////////////////////////////////////////////////////////////////////////////////
 AxisInfo axis[6];               // axes data
 LPSTR moduleFolder = NULL;      // The folder within which this dll resides
 LPVOID lpvSharedMemory = NULL;  // Pointer to shared memory map
@@ -48,14 +48,14 @@ unsigned int iter = 0;          // headtracker frame counter
 BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 {
     // When the dll is first loaded find the folder in which it resides.
-    if(dwReason == DLL_PROCESS_ATTACH)
+    if (dwReason == DLL_PROCESS_ATTACH)
     {
         //FILE* logdll = fopen("headtracker_init.log", "w");
         //fprintf(logdll, "HeadTracker dll attached.\n");fflush(logdll);
         LPSTR moduleFileName = malloc(_MAX_PATH*sizeof(*moduleFileName));moduleFileName[0] = '\0';
         moduleFolder = malloc(_MAX_PATH*sizeof(*moduleFileName));moduleFolder[0] = '\0';
 
-        if(!GetModuleFileName((HMODULE)hModule, moduleFileName, _MAX_PATH))
+        if (!GetModuleFileName((HMODULE)hModule, moduleFileName, _MAX_PATH))
         {
             // If the module path was not retrieved set a default value.
             strcpy(moduleFolder, "./bin/headtracker");
@@ -66,9 +66,9 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
             // Otherwise remove the filename part from the fully qualified path.
             strcpy(moduleFolder, moduleFileName);
             int i;
-            for(i=strlen(moduleFolder); i>=0; --i)
+            for (i=strlen(moduleFolder); i>=0; --i)
             {
-                if(moduleFolder[i] == '\\')
+                if (moduleFolder[i] == '\\')
                 {
                     moduleFolder[i] = '\0';
                     break;
@@ -93,7 +93,7 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 BOOL initFreeTrackSharedMem()
 {
     // Open the named file mapping object.
-    if(hFileMap != NULL)
+    if (hFileMap != NULL)
     {
         return TRUE; // already initialized
     }
@@ -102,7 +102,7 @@ BOOL initFreeTrackSharedMem()
         FILE_MAP_ALL_ACCESS,                               // read/write access
         FALSE,                                           // do not inherit the name
         SHARED_MEMORY_MAP_NAME);                        // name of map object
-    if(hFileMap == NULL)
+    if (hFileMap == NULL)
     {
         fprintf(headTrackerLog, "ERROR: Failed to open file mapping. FreeTrack not running ?\n");fflush(headTrackerLog);
         shutDownHeadTracker();
@@ -116,7 +116,7 @@ BOOL initFreeTrackSharedMem()
         0,                                              // high offset: map from
         0,                                              // low offset: beginning
         FREETRACK_DATA_SIZE);
-    if(lpvSharedMemory == NULL)
+    if (lpvSharedMemory == NULL)
     {
         fprintf(headTrackerLog, "ERROR: Failed to map shared memory\n");fflush(headTrackerLog);
         shutDownHeadTracker();
@@ -128,7 +128,7 @@ BOOL initFreeTrackSharedMem()
         MUTEX_ALL_ACCESS,                               // desired security attributes
         FALSE,                                             // don't inherit handle
         MUTEX_NAME);                                      // mutex name
-    if(hMutex == NULL)
+    if (hMutex == NULL)
     {
         fprintf(headTrackerLog, "Failed to open mutex\n");fflush(headTrackerLog);
         shutDownHeadTracker();
@@ -159,7 +159,7 @@ HEADTRACKERDLL_API int initHeadTracker(HWND hwnd)
     axis[1].active = 1; axis[1].clamp = 0; axis[1].clampMin = -1.0; axis[1].clampMax = 1.0; axis[1].maxFreeTrackValue = M_PI; // pitch
     axis[2].active = 1; axis[2].clamp = 0; axis[2].clampMin = -1.0; axis[2].clampMax = 1.0; axis[2].maxFreeTrackValue = M_PI; // roll
     axis[3].active = 1; axis[3].clamp = 0; axis[3].clampMin = -1.0; axis[3].clampMax = 1.0; axis[3].maxFreeTrackValue = 500; // x
-    axis[4].active = 1; axis[4].clamp = 0; axis[4].clampMin = -1.0; axis[4].clampMax = 1.0; axis[4].maxFreeTrackValue = 200; // y
+    axis[4].active = 1; axis[4].clamp = 0; axis[4].clampMin = -1.0; axis[4].clampMax = 1.0; axis[4].maxFreeTrackValue = 500; // y
     axis[5].active = 1; axis[5].clamp = 0; axis[5].clampMin = -1.0; axis[5].clampMax = 1.0; axis[5].maxFreeTrackValue = 500; // z
     logData = 0;
 
@@ -170,7 +170,7 @@ HEADTRACKERDLL_API int initHeadTracker(HWND hwnd)
     fprintf(headTrackerLog, "INFO: HeadTracker.prefs location: %s\n", prefsFilePath);fflush(headTrackerLog);
 
     FILE* prefsFile = fopen(prefsFilePath, "r");
-    if(prefsFile)
+    if (prefsFile)
     {
         fscanf(prefsFile, "%d %d %lf %lf", &axis[0].active, &axis[0].clamp, &axis[0].clampMin, &axis[0].clampMax); // yaw
         fscanf(prefsFile, "%d %d %lf %lf", &axis[1].active, &axis[1].clamp, &axis[1].clampMin, &axis[1].clampMax); // pitch
@@ -207,21 +207,21 @@ HEADTRACKERDLL_API void shutDownHeadTracker()
     fprintf(headTrackerLog, "HeadTracker start Shut Down\n");fflush(headTrackerLog);
 
     // Clean up the mutex.
-    if(hMutex)
+    if (hMutex)
     {
         CloseHandle(hMutex); hMutex = NULL;
     }
     fprintf(headTrackerLog, "HeadTracker Shut Down : close mutex\n");fflush(headTrackerLog);
 
     // Unmap shared memory from the process's address space.
-    if(lpvSharedMemory)
+    if (lpvSharedMemory)
     {
         UnmapViewOfFile(lpvSharedMemory); lpvSharedMemory = NULL;
     }
     fprintf(headTrackerLog, "HeadTracker Shut Down : close shared mem\n");fflush(headTrackerLog);
 
     // Close the process's handle to the file-mapping object.
-    if(hFileMap)
+    if (hFileMap)
     {
         CloseHandle(hFileMap); hFileMap = NULL;
     }
@@ -262,13 +262,13 @@ HEADTRACKERDLL_API void requestHeadTrackerData(HeadTrackerData* data)
 ////////////////////////////////////////////////////////////////////////////////
 void processValue(AxisInfo* axis, float* inData, double* outData, float factor)
 {
-    if(axis->active)
+    if (axis->active)
     {
         *outData = (*inData / axis->maxFreeTrackValue) * factor;
-        if(axis->clamp)
+        if (axis->clamp)
         {
-            if(*outData < axis->clampMin) *outData = axis->clampMin;
-            if(*outData > axis->clampMax) *outData = axis->clampMax;
+            if (*outData < axis->clampMin) *outData = axis->clampMin;
+            if (*outData > axis->clampMax) *outData = axis->clampMax;
         }
     }
 }
@@ -279,7 +279,7 @@ void processValue(AxisInfo* axis, float* inData, double* outData, float factor)
 HEADTRACKERDLL_API int getHeadTrackerData(HeadTrackerData* data)
 {
     ++iter;
-    if(freeTrackSharedMemInit == 0 && iter%100 == 0) // try to reinit each 100 frames (~2 sec)
+    if (freeTrackSharedMemInit == 0 && iter%100 == 0) // try to reinit each 100 frames (~2 sec)
     {
         initFreeTrackSharedMem();
         return 0;
@@ -289,7 +289,7 @@ HEADTRACKERDLL_API int getHeadTrackerData(HeadTrackerData* data)
 
     // Try to access the mutex.
     DWORD dwWaitResult = WaitForSingleObject(hMutex, 0L);
-    switch(dwWaitResult)
+    switch (dwWaitResult)
     {
         // The mutex was signaled.
         case WAIT_OBJECT_0:
@@ -307,10 +307,11 @@ HEADTRACKERDLL_API int getHeadTrackerData(HeadTrackerData* data)
 
     // If the data id has not changed then do nothing. I'm guessing that this value is updated everytime freetrack
     // supplies a new set of data values. This will hopefully work around issues found when tracking is disabled.
-    /*if(lastDataID == ftData.dataID) {
+    if (lastDataID == ftData.dataID)
+    {
         return 0;
     }
-    lastDataID = ftData.dataID;*/
+    lastDataID = ftData.dataID;
 
     // Rotation values come out of FreeTrack in radians, with a max value of PI
     // which equates to 180 degrees (depending on user curves).
@@ -326,7 +327,7 @@ HEADTRACKERDLL_API int getHeadTrackerData(HeadTrackerData* data)
     processValue(&axis[4], &ftData.y, &data->y, 1);
     processValue(&axis[5], &ftData.z, &data->z, 1);
 
-    if(logData)
+    if (logData)
     {
         fprintf(headTrackerLog, "id    : %d\n", ftData.dataID);
         fprintf(headTrackerLog, "yaw   : %lf  ->  %lf\n", ftData.yaw, data->yaw);

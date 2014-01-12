@@ -17,19 +17,15 @@ How to :
 Just as before, put HeadTracker.dll and HeadTracker.prefs in bin (relative to your root dcs world folder) (it was in bin/headtracker before DCS 1.2.6).
 HeadTracker.prefs is not mandatory, if it's not here, default values will be used, which are :
 
+```
 1 0 -1.0 1.0
-
 1 0 -1.0 1.0
-
 1 0 -1.0 1.0
-
 1 0 -1.0 1.0 500
-
 1 0 -1.0 1.0 500
-
 1 0 -1.0 1.0 500
-
 0
+```
 
 Line 1, 2, 3 are for axis yaw, pitch and roll.
 

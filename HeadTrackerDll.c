@@ -1,17 +1,22 @@
-/*******************************************************************************
- *  HeadTrackerDll.c
- *
- *  Implementation of the ED Head Tracker API that makes use of the data
- *  placed into a shared memory area by FreeTrack.
- *
- *  Based on the reference sources supplied by ED. See here:
- *  http://forums.eagle.ru/showpost.php?p=1212342&postcount=91
- *
- *  File created by Guy Webb, June 2011.
- *  This file is available for anyone to use, but please give credit where
- *  credit is due :)
- *
- ******************************************************************************/
+////////////////////////////////////////////////////////////////////////////////
+// HeadTrackerDll.c
+//
+// Implementation of the ED Head Tracker API that makes use of the data
+// placed into a shared memory area by FreeTrack.
+//
+// Based on the reference sources supplied by ED. See here:
+// http://forums.eagle.ru/showpost.php?p=1212342&postcount=91
+//
+// File created by Guy Webb, June 2011.
+// This file is available for anyone to use, but please give credit where
+// credit is due :)
+//
+// Modified by Maxime Morel after the work of samtheeagle
+// http://forums.eagle.ru/showpost.php?p=1888102&postcount=147
+//
+// TODO : automatic reload of HeadTracker.prefs when modified in game (using alt+tab)
+//
+////////////////////////////////////////////////////////////////////////////////
 #include "freetrack_shared_mem.h"
 #include "HeadTrackerDll.h"
 #include <windows.h>
@@ -28,21 +33,17 @@ typedef struct
     double maxFreeTrackValue;   // max freetrack output value
 } AxisInfo;
 
-AxisInfo axis[6];// axes data
-
+AxisInfo axis[6];               // axes data
 LPSTR moduleFolder = NULL;      // The folder within which this dll resides
 LPVOID lpvSharedMemory = NULL;  // Pointer to shared memory map
 HANDLE hFileMap = NULL;         // Handle to file mapping
 HANDLE hMutex = NULL;           // Handle to shared memory map mutex
 FreeTrackData ftData;           // FreeTrack data exchange variables
 int lastDataID = -1;            // The dataID value of the last set of values
-
 int freeTrackSharedMemInit = 0; // freetrack shared mem init is done ?
-
 FILE* headTrackerLog = NULL;    // Log file for messages & error reporting
 int logData = 0;                // Log input data (debug) ?
-
-unsigned int iter = 0;
+unsigned int iter = 0;          // headtracker frame counter
 ////////////////////////////////////////////////////////////////////////////////
 BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 {
@@ -259,7 +260,7 @@ HEADTRACKERDLL_API void requestHeadTrackerData(HeadTrackerData* data)
     data->z = axis[5].active;
 }
 ////////////////////////////////////////////////////////////////////////////////
-void processvalue(AxisInfo* axis, float* inData, double* outData, float factor)
+void processValue(AxisInfo* axis, float* inData, double* outData, float factor)
 {
     if(axis->active)
     {
@@ -293,98 +294,41 @@ HEADTRACKERDLL_API int getHeadTrackerData(HeadTrackerData* data)
         // The mutex was signaled.
         case WAIT_OBJECT_0:
             // Read from shared memory.
-        memcpy(&ftData, lpvSharedMemory, FREETRACK_DATA_SIZE);
+            memcpy(&ftData, lpvSharedMemory, FREETRACK_DATA_SIZE);
             // Release the mutex when the memory is copied.
-        ReleaseMutex(hMutex);
+            ReleaseMutex(hMutex);
         case WAIT_FAILED:
-        break;
+            break;
         case WAIT_TIMEOUT:
-        break;
+            break;
         default:
-        break;
+            break;
     }
 
     // If the data id has not changed then do nothing. I'm guessing that this value is updated everytime freetrack
     // supplies a new set of data values. This will hopefully work around issues found when tracking is disabled.
-    if(lastDataID == ftData.dataID) {
-        return false;
+    /*if(lastDataID == ftData.dataID) {
+        return 0;
     }
-    lastDataID = ftData.dataID;
+    lastDataID = ftData.dataID;*/
 
     // Rotation values come out of FreeTrack in radians, with a max value of PI
     // which equates to 180 degrees (depending on user curves).
     // So to scale to -1 .. +1 simply divide the value by PI.
-    /*if(axis[0].active)
-    {
-        data->yaw = ftData.yaw / axis[0].maxFreeTrackValue;
-        if(axis[0].clamp)
-        {
-            if(data->yaw < axis[0].clampMin) data->yaw = axis[0].clampMin;
-            if(data->yaw > axis[0].clampMax) data->yaw = axis[0].clampMax;
-        }
-    }
-
-    if(axis[1].active)
-    {
-        data->pitch = (ftData.pitch / axis[1].maxFreeTrackValue) * -1; // Need to invert this apparently.
-        if(axis[1].clamp)
-        {
-            if(data->pitch < axis[1].clampMin) data->pitch = axis[1].clampMin;
-            if(data->pitch > axis[1].clampMax) data->pitch = axis[1].clampMax;
-        }
-    }
-
-    if(axis[2].active)
-    {
-        data->roll = ftData.roll / axis[2].maxFreeTrackValue;
-        if(axis[2].clamp)
-        {
-            if(data->roll < axis[2].clampMin) data->roll = axis[2].clampMin;
-            if(data->roll > axis[2].clampMax) data->roll = axis[2].clampMax;
-        }
-    }*/
-    processvalue(*axis[0], &ftData.yaw, &data->pitch, 1);
-    processvalue(*axis[1], &ftData.yaw, &data->yaw, -1);
-    processvalue(*axis[2], &ftData.yaw, &data->roll, 1);
+    processValue(&axis[0], &ftData.yaw, &data->yaw, 1);
+    processValue(&axis[1], &ftData.pitch, &data->pitch, -1);
+    processValue(&axis[2], &ftData.roll, &data->roll, 1);
 
     // Translation values are more difficult, as they seemed to be returned in
     // units of millimeters, and the range is entirely dependent upon the specific
     // FreeTrack setup. Use the values loaded from the HeadTracker.prefs file.
-    /*if(axis[3].active)
-    {
-        data->x = ftData.x / axis[3].maxFreeTrackValue;
-        if(axis[3].clamp)
-        {
-            if(data->x < axis[3].clampMin) data->x = axis[3].clampMin;
-            if(data->x > axis[3].clampMax) data->x = axis[3].clampMax;
-        }
-    }
-
-    if(axis[4].active)
-    {
-        data->y = ftData.y / axis[4].maxFreeTrackValue;
-        if(axis[4].clamp)
-        {
-            if(data->y < axis[4].clampMin) data->y = axis[4].clampMin;
-            if(data->y > axis[4].clampMax) data->y = axis[4].clampMax;
-        }
-    }
-
-    if(axis[5].active)
-    {
-        data->z = ftData.z / axis[5].maxFreeTrackValue;
-        if(axis[5].clamp)
-        {
-            if(data->z < axis[5].clampMin) data->z = axis[5].clampMin;
-            if(data->z > axis[5].clampMax) data->z = axis[5].clampMax;
-        }
-    }*/
-    processvalue(*axis[3], &ftData.x, &data->roll, 1);
-    processvalue(*axis[4], &ftData.y, &data->roll, 1);
-    processvalue(*axis[5], &ftData.z, &data->roll, 1);
+    processValue(&axis[3], &ftData.x, &data->x, 1);
+    processValue(&axis[4], &ftData.y, &data->y, 1);
+    processValue(&axis[5], &ftData.z, &data->z, 1);
 
     if(logData)
     {
+        fprintf(headTrackerLog, "id    : %d\n", ftData.dataID);
         fprintf(headTrackerLog, "yaw   : %lf  ->  %lf\n", ftData.yaw, data->yaw);
         fprintf(headTrackerLog, "pitch : %lf  ->  %lf\n", ftData.pitch, data->pitch);
         fprintf(headTrackerLog, "roll  : %lf  ->  %lf\n", ftData.roll, data->roll);

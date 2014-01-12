@@ -1,18 +1,18 @@
-/*******************************************************************************
- *  freetrack_shared_mem.h
- *
- *  This header defines the interface to access the freetrack data stored
- *  in a shared memory. To access the data you will need to use the mutex
- *  and memory map names defined below.
- *
- *  Inspired by the freetrack_c_interface.cpp file created by Alastair Moore,
- *  December 2007.
- *
- *  File created by Guy Webb, June 2011.
- *  This file is available for anyone to use, but please give credit where
- *  credit is due :)
- *
- ******************************************************************************/
+////////////////////////////////////////////////////////////////////////////////
+//  freetrack_shared_mem.h
+//
+//  This header defines the interface to access the freetrack data stored
+//  in a shared memory. To access the data you will need to use the mutex
+//  and memory map names defined below.
+//
+//  Inspired by the freetrack_c_interface.cpp file created by Alastair Moore,
+//  December 2007.
+//
+//  File created by Guy Webb, June 2011.
+//  This file is available for anyone to use, but please give credit where
+//  credit is due :)
+//
+////////////////////////////////////////////////////////////////////////////////
 #ifndef __FREETRACK_SHARED_MEM_H__
 #define __FREETRACK_SHARED_MEM_H__
 ////////////////////////////////////////////////////////////////////////////////

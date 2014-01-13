@@ -14,8 +14,6 @@
 // Modified by Maxime Morel after the work of samtheeagle
 // http://forums.eagle.ru/showpost.php?p=1888102&postcount=147
 //
-// TODO : automatic reload of HeadTracker.prefs when modified in game (using alt+tab)
-//
 ////////////////////////////////////////////////////////////////////////////////
 #include "freetrack_shared_mem.h"
 #include "HeadTrackerDll.h"
@@ -24,6 +22,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include <time.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 ////////////////////////////////////////////////////////////////////////////////
 typedef struct
 {
@@ -44,6 +45,9 @@ int freeTrackSharedMemInit = 0; // freetrack shared mem init is done ?
 FILE* headTrackerLog = NULL;    // Log file for messages & error reporting
 int logData = 0;                // Log input data (debug) ?
 unsigned int iter = 0;          // headtracker frame counter
+FILE* prefsFile = NULL;         // preference file
+LPSTR prefsFilePath = NULL;     // preference file path
+time_t prefsModifTime = 0;      // last preference file modif time
 ////////////////////////////////////////////////////////////////////////////////
 BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 {
@@ -142,6 +146,66 @@ BOOL initFreeTrackSharedMem()
     return TRUE;
 }
 ////////////////////////////////////////////////////////////////////////////////
+// Set defaults values
+void loadDefaultPrefs()
+{
+    // set defaults values
+    axis[0].active = 1; axis[0].clamp = 0; axis[0].clampMin = -1.0; axis[0].clampMax = 1.0; axis[0].maxFreeTrackValue = M_PI; // yaw
+    axis[1].active = 1; axis[1].clamp = 0; axis[1].clampMin = -1.0; axis[1].clampMax = 1.0; axis[1].maxFreeTrackValue = M_PI; // pitch
+    axis[2].active = 1; axis[2].clamp = 0; axis[2].clampMin = -1.0; axis[2].clampMax = 1.0; axis[2].maxFreeTrackValue = M_PI; // roll
+    axis[3].active = 1; axis[3].clamp = 0; axis[3].clampMin = -1.0; axis[3].clampMax = 1.0; axis[3].maxFreeTrackValue = 500; // x
+    axis[4].active = 1; axis[4].clamp = 0; axis[4].clampMin = -1.0; axis[4].clampMax = 1.0; axis[4].maxFreeTrackValue = 500; // y
+    axis[5].active = 1; axis[5].clamp = 0; axis[5].clampMin = -1.0; axis[5].clampMax = 1.0; axis[5].maxFreeTrackValue = 500; // z
+    logData = 0;
+}
+////////////////////////////////////////////////////////////////////////////////
+// Load prefs from HeadTracker.prefs file
+void loadPrefsFile()
+{
+    if (!prefsFile)
+    {
+        prefsFile = fopen(prefsFilePath, "r");
+    }
+
+    if (prefsFile)
+    {
+        fscanf(prefsFile, "%d %d %lf %lf", &axis[0].active, &axis[0].clamp, &axis[0].clampMin, &axis[0].clampMax); // yaw
+        fscanf(prefsFile, "%d %d %lf %lf", &axis[1].active, &axis[1].clamp, &axis[1].clampMin, &axis[1].clampMax); // pitch
+        fscanf(prefsFile, "%d %d %lf %lf", &axis[2].active, &axis[2].clamp, &axis[2].clampMin, &axis[2].clampMax); // roll
+        fscanf(prefsFile, "%d %d %lf %lf %lf", &axis[3].active, &axis[3].clamp, &axis[3].clampMin, &axis[3].clampMax, &axis[3].maxFreeTrackValue); // x
+        fscanf(prefsFile, "%d %d %lf %lf %lf", &axis[4].active, &axis[4].clamp, &axis[4].clampMin, &axis[4].clampMax, &axis[4].maxFreeTrackValue); // y
+        fscanf(prefsFile, "%d %d %lf %lf %lf", &axis[5].active, &axis[5].clamp, &axis[5].clampMin, &axis[5].clampMax, &axis[5].maxFreeTrackValue); // z
+        fscanf(prefsFile, "%d", &logData);
+    }
+}
+////////////////////////////////////////////////////////////////////////////////
+// Check modification date of prefs file
+int checkPrefsFileModif()
+{
+    struct stat buf;
+    stat(prefsFilePath, &buf);
+    if (buf.st_mtime > prefsModifTime)
+    {
+        prefsModifTime = buf.st_mtime;
+        return 1;
+    }
+
+    return 0;
+}
+////////////////////////////////////////////////////////////////////////////////
+// Log prefs info
+void dumpPrefsInfo()
+{
+    fprintf(headTrackerLog, "Axis info\n");
+    fprintf(headTrackerLog, "yaw : active : %d, clamp : %d, min clamp : %lf, max clamp %lf, max freetrack output : %lf\n", axis[0].active, axis[0].clamp, axis[0].clampMin, axis[0].clampMax, axis[0].maxFreeTrackValue);
+    fprintf(headTrackerLog, "pitch : active : %d, clamp : %d, min clamp : %lf, max clamp %lf, max freetrack output : %lf\n", axis[1].active, axis[1].clamp, axis[1].clampMin, axis[1].clampMax, axis[1].maxFreeTrackValue);
+    fprintf(headTrackerLog, "roll : active : %d, clamp : %d, min clamp : %lf, max clamp %lf, max freetrack output : %lf\n", axis[2].active, axis[2].clamp, axis[2].clampMin, axis[2].clampMax, axis[2].maxFreeTrackValue);
+    fprintf(headTrackerLog, "x : active : %d, clamp : %d, min clamp : %lf, max clamp %lf, max freetrack output : %lf\n", axis[3].active, axis[3].clamp, axis[3].clampMin, axis[3].clampMax, axis[3].maxFreeTrackValue);
+    fprintf(headTrackerLog, "y : active : %d, clamp : %d, min clamp : %lf, max clamp %lf, max freetrack output : %lf\n", axis[4].active, axis[4].clamp, axis[4].clampMin, axis[4].clampMax, axis[4].maxFreeTrackValue);
+    fprintf(headTrackerLog, "z : active : %d, clamp : %d, min clamp : %lf, max clamp %lf, max freetrack output : %lf\n", axis[5].active, axis[5].clamp, axis[5].clampMin, axis[5].clampMax, axis[5].maxFreeTrackValue);
+    fprintf(headTrackerLog, "log input data : %d\n", logData);fflush(headTrackerLog);
+}
+////////////////////////////////////////////////////////////////////////////////
 // device initialization
 // returns true if initialization was successful
 HEADTRACKERDLL_API int initHeadTracker(HWND hwnd)
@@ -154,47 +218,25 @@ HEADTRACKERDLL_API int initHeadTracker(HWND hwnd)
     fprintf(headTrackerLog, "INFO: HeadTracker.log location: %s\n", logFilePath);fflush(headTrackerLog);
     free(logFilePath);
 
-    // set defaults values
-    axis[0].active = 1; axis[0].clamp = 0; axis[0].clampMin = -1.0; axis[0].clampMax = 1.0; axis[0].maxFreeTrackValue = M_PI; // yaw
-    axis[1].active = 1; axis[1].clamp = 0; axis[1].clampMin = -1.0; axis[1].clampMax = 1.0; axis[1].maxFreeTrackValue = M_PI; // pitch
-    axis[2].active = 1; axis[2].clamp = 0; axis[2].clampMin = -1.0; axis[2].clampMax = 1.0; axis[2].maxFreeTrackValue = M_PI; // roll
-    axis[3].active = 1; axis[3].clamp = 0; axis[3].clampMin = -1.0; axis[3].clampMax = 1.0; axis[3].maxFreeTrackValue = 500; // x
-    axis[4].active = 1; axis[4].clamp = 0; axis[4].clampMin = -1.0; axis[4].clampMax = 1.0; axis[4].maxFreeTrackValue = 500; // y
-    axis[5].active = 1; axis[5].clamp = 0; axis[5].clampMin = -1.0; axis[5].clampMax = 1.0; axis[5].maxFreeTrackValue = 500; // z
-    logData = 0;
-
     // Load translation bounds from HeadTracker.prefs file.
-    LPSTR prefsFilePath = malloc(_MAX_PATH*sizeof(*prefsFilePath));prefsFilePath[0] = '\0';
+    prefsFilePath = malloc(_MAX_PATH*sizeof(*prefsFilePath));prefsFilePath[0] = '\0';
     strcpy(prefsFilePath, moduleFolder);
     strcat(prefsFilePath, "\\HeadTracker.prefs");
     fprintf(headTrackerLog, "INFO: HeadTracker.prefs location: %s\n", prefsFilePath);fflush(headTrackerLog);
 
-    FILE* prefsFile = fopen(prefsFilePath, "r");
+    prefsFile = fopen(prefsFilePath, "r");
     if (prefsFile)
     {
-        fscanf(prefsFile, "%d %d %lf %lf", &axis[0].active, &axis[0].clamp, &axis[0].clampMin, &axis[0].clampMax); // yaw
-        fscanf(prefsFile, "%d %d %lf %lf", &axis[1].active, &axis[1].clamp, &axis[1].clampMin, &axis[1].clampMax); // pitch
-        fscanf(prefsFile, "%d %d %lf %lf", &axis[2].active, &axis[2].clamp, &axis[2].clampMin, &axis[2].clampMax); // roll
-        fscanf(prefsFile, "%d %d %lf %lf %lf", &axis[3].active, &axis[3].clamp, &axis[3].clampMin, &axis[3].clampMax, &axis[3].maxFreeTrackValue); // x
-        fscanf(prefsFile, "%d %d %lf %lf %lf", &axis[4].active, &axis[4].clamp, &axis[4].clampMin, &axis[4].clampMax, &axis[4].maxFreeTrackValue); // y
-        fscanf(prefsFile, "%d %d %lf %lf %lf", &axis[5].active, &axis[5].clamp, &axis[5].clampMin, &axis[5].clampMax, &axis[5].maxFreeTrackValue); // z
-        fscanf(prefsFile, "%d", &logData);
+        checkPrefsFileModif(); // this will initialize prefs file modif time
+        loadPrefsFile();
     }
     else
     {
+        loadDefaultPrefs();
         fprintf(headTrackerLog, "WARNING: Default parameters used.\n");fflush(headTrackerLog);
     }
-    fclose(prefsFile);
-    free(prefsFilePath);
 
-    fprintf(headTrackerLog, "Axis info\n");
-    fprintf(headTrackerLog, "yaw : active : %d, clamp : %d, min clamp : %lf, max clamp %lf, max freetrack output : %lf\n", axis[0].active, axis[0].clamp, axis[0].clampMin, axis[0].clampMax, axis[0].maxFreeTrackValue);
-    fprintf(headTrackerLog, "pitch : active : %d, clamp : %d, min clamp : %lf, max clamp %lf, max freetrack output : %lf\n", axis[1].active, axis[1].clamp, axis[1].clampMin, axis[1].clampMax, axis[1].maxFreeTrackValue);
-    fprintf(headTrackerLog, "roll : active : %d, clamp : %d, min clamp : %lf, max clamp %lf, max freetrack output : %lf\n", axis[2].active, axis[2].clamp, axis[2].clampMin, axis[2].clampMax, axis[2].maxFreeTrackValue);
-    fprintf(headTrackerLog, "x : active : %d, clamp : %d, min clamp : %lf, max clamp %lf, max freetrack output : %lf\n", axis[3].active, axis[3].clamp, axis[3].clampMin, axis[3].clampMax, axis[3].maxFreeTrackValue);
-    fprintf(headTrackerLog, "y : active : %d, clamp : %d, min clamp : %lf, max clamp %lf, max freetrack output : %lf\n", axis[4].active, axis[4].clamp, axis[4].clampMin, axis[4].clampMax, axis[4].maxFreeTrackValue);
-    fprintf(headTrackerLog, "z : active : %d, clamp : %d, min clamp : %lf, max clamp %lf, max freetrack output : %lf\n", axis[5].active, axis[5].clamp, axis[5].clampMin, axis[5].clampMax, axis[5].maxFreeTrackValue);
-    fprintf(headTrackerLog, "log input data : %d\n", logData);fflush(headTrackerLog);
+    dumpPrefsInfo();
 
     initFreeTrackSharedMem();
 
@@ -230,6 +272,8 @@ HEADTRACKERDLL_API void shutDownHeadTracker()
     fprintf(headTrackerLog, "HeadTracker Shut Down\n");fflush(headTrackerLog);
     fclose(headTrackerLog);
 
+    fclose(prefsFile);
+    free(prefsFilePath);
     free(moduleFolder);
 }
 ////////////////////////////////////////////////////////////////////////////////
@@ -283,6 +327,16 @@ HEADTRACKERDLL_API int getHeadTrackerData(HeadTrackerData* data)
     {
         initFreeTrackSharedMem();
         return 0;
+    }
+
+    if (iter%500 == 0) // recheck prefs file for modifications each 500 frames (~10 sec)
+    {
+        if (checkPrefsFileModif() == 1)
+        {
+            fprintf(headTrackerLog, "Prefs needs reloading.\n");fflush(headTrackerLog);
+            loadPrefsFile();
+            dumpPrefsInfo();
+        }
     }
 
     //fprintf(headTrackerLog, "getHeadTrackerData\n");fflush(headTrackerLog);

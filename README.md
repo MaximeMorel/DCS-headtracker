@@ -48,6 +48,8 @@ The 4 values mean :
 
 Line 7 is for logging. Put a '1' to enable full logging.
 
+max input value is the maximum value given by freetrack. If we name it vmax, freetrack outputs values for each axis in the range [-vmax; vmax]. And it will be mapped to [-1; 1] for DCS.
+
 Clamping can be used to restrain an axis in a given direction. For example the z axis, you might want to be able to go full backward, but not full forward, to be not too close from the A-10 MFD.
 For this, line 6, you put :
 

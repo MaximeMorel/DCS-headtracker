@@ -53,12 +53,12 @@ typedef struct
 } FreeTrackData;
 ////////////////////////////////////////////////////////////////////////////////
 // The size of the FreeTrackData structure.
-const int FREETRACK_DATA_SIZE = sizeof(FreeTrackData);
+extern const int FREETRACK_DATA_SIZE;
 ////////////////////////////////////////////////////////////////////////////////
 // The name of the shared memory map where an instance of FreeTrackData resides.
-const LPCTSTR SHARED_MEMORY_MAP_NAME = TEXT("FT_SharedMem");
+extern const LPCTSTR SHARED_MEMORY_MAP_NAME;
 ////////////////////////////////////////////////////////////////////////////////
 // The name of the mutex that controls access to the shared memory map.
-const LPCTSTR MUTEX_NAME = TEXT("FT_Mutext");
+extern const LPCTSTR MUTEX_NAME;
 ////////////////////////////////////////////////////////////////////////////////
 #endif // __FREETRACK_SHARED_MEM_H__

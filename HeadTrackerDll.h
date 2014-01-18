@@ -4,7 +4,7 @@
 #ifdef HEADTRACKERDLL_EXPORTS
 #define HEADTRACKERDLL_API __declspec(dllexport)
 #else
-#define HEADTRACKERDLL_API __declspec(dllimport)
+#define HEADTRACKERDLL_API //__declspec(dllimport)
 #endif
 ////////////////////////////////////////////////////////////////////////////////
 #include <windows.h>

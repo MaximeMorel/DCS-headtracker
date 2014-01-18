@@ -64,10 +64,14 @@
 			<Add option="-Wall" />
 			<Add option="-DHEADTRACKERDLL_EXPORTS" />
 		</Compiler>
+		<Unit filename="HeadTracker.h" />
 		<Unit filename="HeadTrackerDll.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="HeadTrackerDll.h" />
+		<Unit filename="freetrack_shared_mem.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="freetrack_shared_mem.h" />
 		<Extensions>
 			<DoxyBlocks>

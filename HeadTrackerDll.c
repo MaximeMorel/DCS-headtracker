@@ -17,6 +17,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include "freetrack_shared_mem.h"
 #include "HeadTrackerDll.h"
+#include "HeadTracker.h"
 #include <windows.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -26,28 +27,11 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 ////////////////////////////////////////////////////////////////////////////////
-typedef struct
-{
-    int active;                 // is the axis active
-    int clamp;                  // do we clamp values ?
-    double clampMin, clampMax;  // min and max clamp [-1, 1]
-    double maxFreeTrackValue;   // max freetrack output value
-} AxisInfo;
-////////////////////////////////////////////////////////////////////////////////
-AxisInfo axis[6];               // axes data
-LPSTR moduleFolder = NULL;      // The folder within which this dll resides
-LPVOID lpvSharedMemory = NULL;  // Pointer to shared memory map
-HANDLE hFileMap = NULL;         // Handle to file mapping
-HANDLE hMutex = NULL;           // Handle to shared memory map mutex
-FreeTrackData ftData;           // FreeTrack data exchange variables
-int lastDataID = -1;            // The dataID value of the last set of values
-int freeTrackSharedMemInit = 0; // freetrack shared mem init is done ?
-FILE* headTrackerLog = NULL;    // Log file for messages & error reporting
-int logData = 0;                // Log input data (debug) ?
-unsigned int iter = 0;          // headtracker frame counter
-FILE* prefsFile = NULL;         // preference file
-LPSTR prefsFilePath = NULL;     // preference file path
-time_t prefsModifTime = 0;      // last preference file modif time
+#ifdef HEADTRACKERDLL_EXPORTS
+#define NBITER 100 // if compiling dll
+#else
+#define NBITER 1 // if compiling tester exe
+#endif
 ////////////////////////////////////////////////////////////////////////////////
 BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 {
@@ -57,7 +41,7 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
         //FILE* logdll = fopen("headtracker_init.log", "w");
         //fprintf(logdll, "HeadTracker dll attached.\n");fflush(logdll);
         LPSTR moduleFileName = malloc(_MAX_PATH*sizeof(*moduleFileName));moduleFileName[0] = '\0';
-        moduleFolder = malloc(_MAX_PATH*sizeof(*moduleFileName));moduleFolder[0] = '\0';
+        moduleFolder = malloc(_MAX_PATH*sizeof(*moduleFolder));moduleFolder[0] = '\0';
 
         if (!GetModuleFileName((HMODULE)hModule, moduleFileName, _MAX_PATH))
         {
@@ -169,6 +153,8 @@ void loadPrefsFile()
 
     if (prefsFile)
     {
+        prefsFile = freopen(prefsFilePath, "r", prefsFile);
+
         fscanf(prefsFile, "%d %d %lf %lf", &axis[0].active, &axis[0].clamp, &axis[0].clampMin, &axis[0].clampMax); // yaw
         fscanf(prefsFile, "%d %d %lf %lf", &axis[1].active, &axis[1].clamp, &axis[1].clampMin, &axis[1].clampMax); // pitch
         fscanf(prefsFile, "%d %d %lf %lf", &axis[2].active, &axis[2].clamp, &axis[2].clampMin, &axis[2].clampMax); // roll
@@ -224,6 +210,7 @@ HEADTRACKERDLL_API int initHeadTracker(HWND hwnd)
     strcat(prefsFilePath, "\\HeadTracker.prefs");
     fprintf(headTrackerLog, "INFO: HeadTracker.prefs location: %s\n", prefsFilePath);fflush(headTrackerLog);
 
+    loadDefaultPrefs();
     prefsFile = fopen(prefsFilePath, "r");
     if (prefsFile)
     {
@@ -232,7 +219,6 @@ HEADTRACKERDLL_API int initHeadTracker(HWND hwnd)
     }
     else
     {
-        loadDefaultPrefs();
         fprintf(headTrackerLog, "WARNING: Default parameters used.\n");fflush(headTrackerLog);
     }
 
@@ -319,17 +305,17 @@ void processValue(AxisInfo* axis, float* inData, double* outData, float factor)
 ////////////////////////////////////////////////////////////////////////////////
 // get tracker data
 // this function called every frame
-// client recieves only axes, described in setDataSources() call
+// client receives only axes, described in setDataSources() call
 HEADTRACKERDLL_API int getHeadTrackerData(HeadTrackerData* data)
 {
     ++iter;
-    if (freeTrackSharedMemInit == 0 && iter%100 == 0) // try to reinit each 100 frames (~2 sec)
+    if (freeTrackSharedMemInit == 0 && iter%NBITER == 0) // try to reinit each 100 frames (~2 sec)
     {
         initFreeTrackSharedMem();
         return 0;
     }
 
-    if (iter%500 == 0) // recheck prefs file for modifications each 500 frames (~10 sec)
+    if (iter%(NBITER*5) == 0) // recheck prefs file for modifications each 500 frames (~10 sec)
     {
         if (checkPrefsFileModif() == 1)
         {
@@ -395,3 +381,4 @@ HEADTRACKERDLL_API int getHeadTrackerData(HeadTrackerData* data)
 
     return 1;
 }
+////////////////////////////////////////////////////////////////////////////////

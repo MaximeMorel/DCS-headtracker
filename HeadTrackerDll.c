@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // HeadTrackerDll.c
 //
-// Implementation of the ED Head Tracker API that makes use of the data
+// Implementation of the ED Head Tracker API for DCS that makes use of the data
 // placed into a shared memory area by FreeTrack.
 //
 // Based on the reference sources supplied by ED. See here:
@@ -40,8 +40,11 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
     {
         //FILE* logdll = fopen("headtracker_init.log", "w");
         //fprintf(logdll, "HeadTracker dll attached.\n");fflush(logdll);
-        LPSTR moduleFileName = malloc(_MAX_PATH*sizeof(*moduleFileName));moduleFileName[0] = '\0';
-        moduleFolder = malloc(_MAX_PATH*sizeof(*moduleFolder));moduleFolder[0] = '\0';
+        LPSTR moduleFileName = malloc(_MAX_PATH * sizeof(*moduleFileName));
+        moduleFileName[0] = '\0';
+
+        moduleFolder = malloc(_MAX_PATH * sizeof(*moduleFolder));
+        moduleFolder[0] = '\0';
 
         if (!GetModuleFileName((HMODULE)hModule, moduleFileName, _MAX_PATH))
         {
@@ -54,7 +57,7 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
             // Otherwise remove the filename part from the fully qualified path.
             strcpy(moduleFolder, moduleFileName);
             int i;
-            for (i=strlen(moduleFolder); i>=0; --i)
+            for (i = strlen(moduleFolder); i >= 0; --i)
             {
                 if (moduleFolder[i] == '\\')
                 {
@@ -92,7 +95,8 @@ BOOL initFreeTrackSharedMem()
         SHARED_MEMORY_MAP_NAME);                        // name of map object
     if (hFileMap == NULL)
     {
-        fprintf(headTrackerLog, "ERROR: Failed to open file mapping. FreeTrack not running ?\n");fflush(headTrackerLog);
+        fprintf(headTrackerLog, "ERROR: Failed to open file mapping. FreeTrack not running ?\n");
+        fflush(headTrackerLog);
         shutDownHeadTracker();
         return FALSE;
     }
@@ -106,7 +110,8 @@ BOOL initFreeTrackSharedMem()
         FREETRACK_DATA_SIZE);
     if (lpvSharedMemory == NULL)
     {
-        fprintf(headTrackerLog, "ERROR: Failed to map shared memory\n");fflush(headTrackerLog);
+        fprintf(headTrackerLog, "ERROR: Failed to map shared memory\n");
+        fflush(headTrackerLog);
         shutDownHeadTracker();
         return FALSE;
     }
@@ -118,12 +123,14 @@ BOOL initFreeTrackSharedMem()
         MUTEX_NAME);                                      // mutex name
     if (hMutex == NULL)
     {
-        fprintf(headTrackerLog, "Failed to open mutex\n");fflush(headTrackerLog);
+        fprintf(headTrackerLog, "Failed to open mutex\n");
+        fflush(headTrackerLog);
         shutDownHeadTracker();
         return FALSE;
     }
 
-    fprintf(headTrackerLog, "HeadTracker Initialized\n");fflush(headTrackerLog);
+    fprintf(headTrackerLog, "HeadTracker Initialized\n");
+    fflush(headTrackerLog);
 
     freeTrackSharedMemInit = 1;
 
@@ -165,6 +172,30 @@ void loadPrefsFile()
     }
 }
 ////////////////////////////////////////////////////////////////////////////////
+// Load prefs from HeadTracker.prefs file
+void writePrefsFile()
+{
+    if (!prefsFile)
+    {
+        prefsFile = fopen(prefsFilePath, "w");
+    }
+
+    if (prefsFile)
+    {
+        prefsFile = freopen(prefsFilePath, "w", prefsFile);
+
+        fprintf(prefsFile, "%d %d %lf %lf\n", axis[0].active, axis[0].clamp, axis[0].clampMin, axis[0].clampMax); // yaw
+        fprintf(prefsFile, "%d %d %lf %lf\n", axis[1].active, axis[1].clamp, axis[1].clampMin, axis[1].clampMax); // pitch
+        fprintf(prefsFile, "%d %d %lf %lf\n", axis[2].active, axis[2].clamp, axis[2].clampMin, axis[2].clampMax); // roll
+        fprintf(prefsFile, "%d %d %lf %lf %lf\n", axis[3].active, axis[3].clamp, axis[3].clampMin, axis[3].clampMax, axis[3].maxFreeTrackValue); // x
+        fprintf(prefsFile, "%d %d %lf %lf %lf\n", axis[4].active, axis[4].clamp, axis[4].clampMin, axis[4].clampMax, axis[4].maxFreeTrackValue); // y
+        fprintf(prefsFile, "%d %d %lf %lf %lf\n", axis[5].active, axis[5].clamp, axis[5].clampMin, axis[5].clampMax, axis[5].maxFreeTrackValue); // z
+        fprintf(prefsFile, "%d\n", logData);
+
+        prefsFile = freopen(prefsFilePath, "r", prefsFile);
+    }
+}
+////////////////////////////////////////////////////////////////////////////////
 // Check modification date of prefs file
 int checkPrefsFileModif()
 {
@@ -189,7 +220,8 @@ void dumpPrefsInfo()
     fprintf(headTrackerLog, "x : active : %d, clamp : %d, min clamp : %lf, max clamp %lf, max freetrack output : %lf\n", axis[3].active, axis[3].clamp, axis[3].clampMin, axis[3].clampMax, axis[3].maxFreeTrackValue);
     fprintf(headTrackerLog, "y : active : %d, clamp : %d, min clamp : %lf, max clamp %lf, max freetrack output : %lf\n", axis[4].active, axis[4].clamp, axis[4].clampMin, axis[4].clampMax, axis[4].maxFreeTrackValue);
     fprintf(headTrackerLog, "z : active : %d, clamp : %d, min clamp : %lf, max clamp %lf, max freetrack output : %lf\n", axis[5].active, axis[5].clamp, axis[5].clampMin, axis[5].clampMax, axis[5].maxFreeTrackValue);
-    fprintf(headTrackerLog, "log input data : %d\n", logData);fflush(headTrackerLog);
+    fprintf(headTrackerLog, "log input data : %d\n", logData);
+    fflush(headTrackerLog);
 }
 ////////////////////////////////////////////////////////////////////////////////
 // device initialization
@@ -197,18 +229,22 @@ void dumpPrefsInfo()
 HEADTRACKERDLL_API int initHeadTracker(HWND hwnd)
 {
     // Create a log file for the HeadTracker.
-    LPSTR logFilePath = malloc(_MAX_PATH*sizeof(*logFilePath));logFilePath[0] = '\0';
+    LPSTR logFilePath = malloc(_MAX_PATH * sizeof(*logFilePath));
+    logFilePath[0] = '\0';
     strcpy(logFilePath, moduleFolder);
     strcat(logFilePath, "\\HeadTracker.log");
     headTrackerLog = fopen(logFilePath, "w");
-    fprintf(headTrackerLog, "INFO: HeadTracker.log location: %s\n", logFilePath);fflush(headTrackerLog);
+    fprintf(headTrackerLog, "INFO: HeadTracker.log location: %s\n", logFilePath);
+    fflush(headTrackerLog);
     free(logFilePath);
 
     // Load translation bounds from HeadTracker.prefs file.
-    prefsFilePath = malloc(_MAX_PATH*sizeof(*prefsFilePath));prefsFilePath[0] = '\0';
+    prefsFilePath = malloc(_MAX_PATH * sizeof(*prefsFilePath));
+    prefsFilePath[0] = '\0';
     strcpy(prefsFilePath, moduleFolder);
     strcat(prefsFilePath, "\\HeadTracker.prefs");
-    fprintf(headTrackerLog, "INFO: HeadTracker.prefs location: %s\n", prefsFilePath);fflush(headTrackerLog);
+    fprintf(headTrackerLog, "INFO: HeadTracker.prefs location: %s\n", prefsFilePath);
+    fflush(headTrackerLog);
 
     loadDefaultPrefs();
     prefsFile = fopen(prefsFilePath, "r");
@@ -219,7 +255,10 @@ HEADTRACKERDLL_API int initHeadTracker(HWND hwnd)
     }
     else
     {
-        fprintf(headTrackerLog, "WARNING: Default parameters used.\n");fflush(headTrackerLog);
+        fprintf(headTrackerLog, "WARNING: Default parameters used.\n");
+        fprintf(headTrackerLog, "Writing default parameters prefs file.\n");
+        fflush(headTrackerLog);
+        writePrefsFile();
     }
 
     dumpPrefsInfo();
@@ -232,30 +271,38 @@ HEADTRACKERDLL_API int initHeadTracker(HWND hwnd)
 // device deinitialization
 HEADTRACKERDLL_API void shutDownHeadTracker()
 {
-    fprintf(headTrackerLog, "HeadTracker start Shut Down\n");fflush(headTrackerLog);
+    fprintf(headTrackerLog, "HeadTracker start Shut Down\n");
+    fflush(headTrackerLog);
 
     // Clean up the mutex.
     if (hMutex)
     {
-        CloseHandle(hMutex); hMutex = NULL;
+        CloseHandle(hMutex);
+        hMutex = NULL;
     }
-    fprintf(headTrackerLog, "HeadTracker Shut Down : close mutex\n");fflush(headTrackerLog);
+    fprintf(headTrackerLog, "HeadTracker Shut Down : close mutex\n");
+    fflush(headTrackerLog);
 
     // Unmap shared memory from the process's address space.
     if (lpvSharedMemory)
     {
-        UnmapViewOfFile(lpvSharedMemory); lpvSharedMemory = NULL;
+        UnmapViewOfFile(lpvSharedMemory);
+        lpvSharedMemory = NULL;
     }
-    fprintf(headTrackerLog, "HeadTracker Shut Down : close shared mem\n");fflush(headTrackerLog);
+    fprintf(headTrackerLog, "HeadTracker Shut Down : close shared mem\n");
+    fflush(headTrackerLog);
 
     // Close the process's handle to the file-mapping object.
     if (hFileMap)
     {
-        CloseHandle(hFileMap); hFileMap = NULL;
+        CloseHandle(hFileMap);
+        hFileMap = NULL;
     }
-    fprintf(headTrackerLog, "HeadTracker Shut Down : close mmap\n");fflush(headTrackerLog);
+    fprintf(headTrackerLog, "HeadTracker Shut Down : close mmap\n");
+    fflush(headTrackerLog);
 
-    fprintf(headTrackerLog, "HeadTracker Shut Down\n");fflush(headTrackerLog);
+    fprintf(headTrackerLog, "HeadTracker Shut Down\n");
+    fflush(headTrackerLog);
     fclose(headTrackerLog);
 
     fclose(prefsFile);
@@ -309,17 +356,18 @@ void processValue(AxisInfo* axis, float* inData, double* outData, float factor)
 HEADTRACKERDLL_API int getHeadTrackerData(HeadTrackerData* data)
 {
     ++iter;
-    if (freeTrackSharedMemInit == 0 && iter%NBITER == 0) // try to reinit each 100 frames (~2 sec)
+    if (freeTrackSharedMemInit == 0 && iter % NBITER == 0) // try to reinit each 100 frames (~2 sec)
     {
         initFreeTrackSharedMem();
         return 0;
     }
 
-    if (iter%(NBITER*5) == 0) // recheck prefs file for modifications each 500 frames (~10 sec)
+    if (iter % (NBITER * 5) == 0) // recheck prefs file for modifications each 500 frames (~10 sec)
     {
         if (checkPrefsFileModif() == 1)
         {
-            fprintf(headTrackerLog, "Prefs needs reloading.\n");fflush(headTrackerLog);
+            fprintf(headTrackerLog, "Prefs needs reloading.\n");
+            fflush(headTrackerLog);
             loadPrefsFile();
             dumpPrefsInfo();
         }

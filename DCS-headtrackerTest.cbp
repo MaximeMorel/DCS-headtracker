@@ -5,35 +5,87 @@
 		<Option title="DCS-headtrackerTest" />
 		<Option platforms="Windows;" />
 		<Option pch_mode="2" />
-		<Option compiler="gnu_gcc_compiler_x64" />
+		<Option compiler="gcc" />
 		<Build>
+			<Target title="Debug_win32">
+				<Option platforms="Windows;" />
+				<Option output="bin/Debug_win32/DCS-headtrackerTest" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/DebugTester_win32/" />
+				<Option type="1" />
+				<Option compiler="gnu_gcc_compiler_32_bits" />
+				<Compiler>
+					<Add option="-g" />
+				</Compiler>
+			</Target>
+			<Target title="Release_win32">
+				<Option platforms="Windows;" />
+				<Option output="bin/Release_win32/DCS-headtrackerTest" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/ReleaseTester_win32/" />
+				<Option type="1" />
+				<Option compiler="gnu_gcc_compiler_32_bits" />
+				<Option projectIncludeDirsRelation="-1" />
+				<Option projectLibDirsRelation="-1" />
+				<Compiler>
+					<Add option="-fomit-frame-pointer" />
+					<Add option="-fexpensive-optimizations" />
+					<Add option="-Os" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+				</Linker>
+				<MakeCommands>
+					<Build command="" />
+					<CompileFile command="" />
+					<Clean command="" />
+					<DistClean command="" />
+					<AskRebuildNeeded command="" />
+					<SilentBuild command=" &gt; $(CMD_NULL)" />
+				</MakeCommands>
+			</Target>
 			<Target title="Debug_win64">
 				<Option platforms="Windows;" />
-				<Option output="bin/DebugTester_win64/DCS-headtrackerTest" prefix_auto="1" extension_auto="1" />
+				<Option output="bin/Debug_win64/DCS-headtrackerTest" prefix_auto="1" extension_auto="1" />
 				<Option object_output="obj/DebugTester_win64/" />
 				<Option type="1" />
-				<Option compiler="gnu_gcc_compiler_x64" />
+				<Option compiler="gnu_gcc_compiler_64_bits" />
 				<Compiler>
 					<Add option="-g" />
 				</Compiler>
 			</Target>
 			<Target title="Release_win64">
 				<Option platforms="Windows;" />
-				<Option output="bin/ReleaseTester_win64/DCS-headtrackerTest" prefix_auto="1" extension_auto="1" />
+				<Option output="bin/Release_win64/DCS-headtrackerTest" prefix_auto="1" extension_auto="1" />
 				<Option object_output="obj/ReleaseTester_win64/" />
 				<Option type="1" />
-				<Option compiler="gnu_gcc_compiler_x64" />
+				<Option compiler="gnu_gcc_compiler_64_bits" />
+				<Option projectIncludeDirsRelation="-1" />
+				<Option projectLibDirsRelation="-1" />
 				<Compiler>
-					<Add option="-O2" />
+					<Add option="-fomit-frame-pointer" />
+					<Add option="-fexpensive-optimizations" />
+					<Add option="-Os" />
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
 				</Linker>
+				<MakeCommands>
+					<Build command="" />
+					<CompileFile command="" />
+					<Clean command="" />
+					<DistClean command="" />
+					<AskRebuildNeeded command="" />
+					<SilentBuild command=" &gt; $(CMD_NULL)" />
+				</MakeCommands>
 			</Target>
 		</Build>
 		<Compiler>
+			<Add option="-Wmain" />
+			<Add option="-Wextra" />
 			<Add option="-Wall" />
 		</Compiler>
+		<Linker>
+			<Add option="-static-libgcc" />
+		</Linker>
 		<Unit filename="HeadTracker.h" />
 		<Unit filename="HeadTrackerDll.c">
 			<Option compilerVar="CC" />

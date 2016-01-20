@@ -1,9 +1,9 @@
 DCS-headtracker
 ===============
 
-Implementation of DCS (Digital Combat Simulator) headtracker interface. To use with FreeTrack.
+Implementation of DCS (Digital Combat Simulator) headtracker interface. To use with FreeTrack or opentrack.
 
-Headtracker dll interface for freetrack / opentrack and DCS World.
+Headtracker dll interface for FreeTtrack / opentrack and DCS World.
 
 Using sources by samtheeagle in this post : http://forums.eagle.ru/showpost.php?p=1888102&postcount=147
 

@@ -12,7 +12,7 @@
 				<Option output="bin/Debug_win32/HeadTracker" imp_lib="$(TARGET_OUTPUT_DIR)$(TARGET_OUTPUT_BASENAME).a" def_file="$(TARGET_OUTPUT_DIR)$(TARGET_OUTPUT_BASENAME).def" prefix_auto="1" extension_auto="1" />
 				<Option object_output="obj/Debug_win32/" />
 				<Option type="3" />
-				<Option compiler="gcc" />
+				<Option compiler="gnu_gcc_compiler_32_bits" />
 				<Compiler>
 					<Add option="-g" />
 				</Compiler>
@@ -22,7 +22,7 @@
 				<Option output="bin/Release_win32/HeadTracker" imp_lib="$(TARGET_OUTPUT_DIR)$(TARGET_OUTPUT_BASENAME).a" def_file="$(TARGET_OUTPUT_DIR)$(TARGET_OUTPUT_BASENAME).def" prefix_auto="1" extension_auto="1" />
 				<Option object_output="obj/Release_win32/" />
 				<Option type="3" />
-				<Option compiler="gcc" />
+				<Option compiler="gnu_gcc_compiler_32_bits" />
 				<Compiler>
 					<Add option="-fomit-frame-pointer" />
 					<Add option="-fexpensive-optimizations" />
@@ -37,7 +37,7 @@
 				<Option output="bin/Debug_win64/HeadTracker" imp_lib="$(TARGET_OUTPUT_DIR)$(TARGET_OUTPUT_BASENAME).a" def_file="$(TARGET_OUTPUT_DIR)$(TARGET_OUTPUT_BASENAME).def" prefix_auto="1" extension_auto="1" />
 				<Option object_output="obj/Debug_win64/" />
 				<Option type="3" />
-				<Option compiler="gnu_gcc_compiler_x64" />
+				<Option compiler="gnu_gcc_compiler_64_bits" />
 				<Compiler>
 					<Add option="-g" />
 				</Compiler>
@@ -47,7 +47,7 @@
 				<Option output="bin/Release_win64/HeadTracker" imp_lib="$(TARGET_OUTPUT_DIR)$(TARGET_OUTPUT_BASENAME).a" def_file="$(TARGET_OUTPUT_DIR)$(TARGET_OUTPUT_BASENAME).def" prefix_auto="1" extension_auto="1" />
 				<Option object_output="obj/Release_win64/" />
 				<Option type="3" />
-				<Option compiler="gnu_gcc_compiler_x64" />
+				<Option compiler="gnu_gcc_compiler_64_bits" />
 				<Compiler>
 					<Add option="-fomit-frame-pointer" />
 					<Add option="-fexpensive-optimizations" />
@@ -64,6 +64,9 @@
 			<Add option="-Wall" />
 			<Add option="-DHEADTRACKERDLL_EXPORTS" />
 		</Compiler>
+		<Linker>
+			<Add option="-static-libgcc" />
+		</Linker>
 		<Unit filename="HeadTracker.h" />
 		<Unit filename="HeadTrackerDll.c">
 			<Option compilerVar="CC" />

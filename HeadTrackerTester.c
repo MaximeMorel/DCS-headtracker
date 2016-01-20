@@ -8,7 +8,7 @@ extern FILE* headTrackerLog;
 ////////////////////////////////////////////////////////////////////////////////
 int main(int argc, char** argv)
 {
-    moduleFolder = malloc(2*sizeof(*moduleFolder));
+    moduleFolder = malloc(2 * sizeof(*moduleFolder));
     moduleFolder[0] = '.';
     moduleFolder[1] = '\0';
     HWND hwnd;
@@ -17,7 +17,7 @@ int main(int argc, char** argv)
     HeadTrackerData data;
     requestHeadTrackerData(&data);
 
-    for(;;)
+    for (;;)
     {
         getHeadTrackerData(&data);
         Sleep(500);

@@ -80,6 +80,7 @@
 		</Build>
 		<Compiler>
 			<Add option="-Wmain" />
+			<Add option="-pedantic" />
 			<Add option="-Wextra" />
 			<Add option="-Wall" />
 		</Compiler>

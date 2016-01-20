@@ -33,8 +33,11 @@
 #define NBITER 1 // if compiling tester exe
 #endif
 ////////////////////////////////////////////////////////////////////////////////
+#define UNUSED(x) (void)(x)
+////////////////////////////////////////////////////////////////////////////////
 BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 {
+    UNUSED(lpReserved);
     // When the dll is first loaded find the folder in which it resides.
     if (dwReason == DLL_PROCESS_ATTACH)
     {
@@ -50,7 +53,7 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
         {
             // If the module path was not retrieved set a default value.
             strcpy(moduleFolder, "./bin/headtracker");
-            //fprintf(logdll, "moduleFolder : not found, ./bin/headtracker by default.");fflush(logdll);
+            //fprintf(logdll, "moduleFolder : not found, ./bin/headtracker by default.\n");fflush(logdll);
         }
         else
         {
@@ -83,12 +86,16 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 // init freetrack sharedmem access
 BOOL initFreeTrackSharedMem()
 {
-    // Open the named file mapping object.
-    if (hFileMap != NULL)
+    if (freeTrackSharedMemInit == 1)
     {
         return TRUE; // already initialized
     }
 
+    // Close the process's handle to the file-mapping object.
+    if (hFileMap)
+    {
+        CloseHandle(hFileMap);
+    }
     hFileMap = OpenFileMapping(
         FILE_MAP_ALL_ACCESS,                               // read/write access
         FALSE,                                           // do not inherit the name
@@ -102,6 +109,10 @@ BOOL initFreeTrackSharedMem()
     }
 
     // Get a pointer to the file-mapped shared memory.
+    if (lpvSharedMemory)
+    {
+        UnmapViewOfFile(lpvSharedMemory);
+    }
     lpvSharedMemory = MapViewOfFile(
         hFileMap,                                         // object to map view of
         FILE_MAP_ALL_ACCESS,                            // read/write permission
@@ -117,6 +128,10 @@ BOOL initFreeTrackSharedMem()
     }
 
     // Open the shared memory access control mutex.
+    if (hMutex)
+    {
+        CloseHandle(hMutex);
+    }
     hMutex = OpenMutex(
         MUTEX_ALL_ACCESS,                               // desired security attributes
         FALSE,                                             // don't inherit handle
@@ -228,6 +243,7 @@ void dumpPrefsInfo()
 // returns true if initialization was successful
 HEADTRACKERDLL_API int initHeadTracker(HWND hwnd)
 {
+    UNUSED(hwnd);
     // Create a log file for the HeadTracker.
     LPSTR logFilePath = malloc(_MAX_PATH * sizeof(*logFilePath));
     logFilePath[0] = '\0';
@@ -263,6 +279,7 @@ HEADTRACKERDLL_API int initHeadTracker(HWND hwnd)
 
     dumpPrefsInfo();
 
+    freeTrackSharedMemInit = 0;
     initFreeTrackSharedMem();
 
     return 1;
@@ -304,10 +321,14 @@ HEADTRACKERDLL_API void shutDownHeadTracker()
     fprintf(headTrackerLog, "HeadTracker Shut Down\n");
     fflush(headTrackerLog);
     fclose(headTrackerLog);
+    headTrackerLog = NULL;
 
     fclose(prefsFile);
+    prefsFile = NULL;
     free(prefsFilePath);
+    prefsFilePath = NULL;
     free(moduleFolder);
+    moduleFolder = NULL;
 }
 ////////////////////////////////////////////////////////////////////////////////
 // client informs headtracker which axes he would like to receive
@@ -379,18 +400,17 @@ HEADTRACKERDLL_API int getHeadTrackerData(HeadTrackerData* data)
     DWORD dwWaitResult = WaitForSingleObject(hMutex, 0L);
     switch (dwWaitResult)
     {
-        // The mutex was signaled.
-        case WAIT_OBJECT_0:
-            // Read from shared memory.
-            memcpy(&ftData, lpvSharedMemory, FREETRACK_DATA_SIZE);
-            // Release the mutex when the memory is copied.
-            ReleaseMutex(hMutex);
-        case WAIT_FAILED:
-            break;
-        case WAIT_TIMEOUT:
-            break;
-        default:
-            break;
+    // The mutex was signaled.
+    case WAIT_OBJECT_0:
+        // Read from shared memory.
+        memcpy(&ftData, lpvSharedMemory, FREETRACK_DATA_SIZE);
+        // Release the mutex when the memory is copied.
+        ReleaseMutex(hMutex);
+    case WAIT_FAILED:
+    case WAIT_TIMEOUT:
+        break;
+    default:
+        break;
     }
 
     // If the data id has not changed then do nothing. I'm guessing that this value is updated everytime freetrack
